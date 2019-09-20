@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache updateCheck="false" dynamicConfig="true" maxBytesLocalHeap="120M">
+
+    <sizeOfPolicy maxDepth="3000" maxDepthExceededBehavior="continue"/>
+
+    <!--===========================================================================================
+    Pokud je pridana nova cache, je potreba pridat zaznam pro mazani cache do cache.xml,
+    a pridat metodu do cz.cvut.vvvs.services.common.CacheSupportImpl (ma-li to smysl samozrejme)
+    ===============================================================================================-->
+
+    <cache name="domainCodes" maxBytesLocalHeap="20M" />
+
+    <cache name="organizations" maxBytesLocalHeap="20M" />
+
+    <cache name="configuration" maxBytesLocalHeap="20M" />
+
+    <cache name="hints" maxBytesLocalHeap="20M" />
+
+    <cache name="decompositionCategories" maxBytesLocalHeap="20M" />
+
+    <cache name="facultiesStats" maxBytesLocalHeap="2M" />
+
+    <cache name="rvviStats" maxBytesLocalHeap="2M" />
+
+    <cache name="doctoralStats" maxBytesLocalHeap="2M" />
+
+</ehcache>

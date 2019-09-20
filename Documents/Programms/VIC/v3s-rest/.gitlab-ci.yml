@@ -1,0 +1,89 @@
+stages:
+  - befor_script
+  - build
+  - reviewApps
+  - elastic
+  
+variables:
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true"
+  JAVA_HOME: "/opt/java/default"
+  TOMCAT_HOME: "/usr/local/tomcat/default"
+  APP_SERVER: "Tomcat"
+  DOCKER_DIR: "/srv/"
+  REVIEWAPPS_HOSTNAME: "gitlab-apps.dev1"
+  TOMCAT_CONFIG_DIR: "./src/main/resources/"
+  TOMCAT_CONFIG_FILE: "application-dev.properties"
+  GITLAB_TRAEFIK_FRONTEND: "${SERVICE}-${CI_COMMIT_REF_SLUG}--${CI_PROJECT_NAME}.${REVIEWAPPS_HOSTNAME}"
+
+maven_build:
+  stage: build
+  image: mobility_oracle_maven:3.5.2-jdk-8
+  tags:
+    - gitlab-apps.dev1-docker
+  script:
+    - mvn package -P WAR
+  after_script:
+    - ls
+    - mkdir -p /reviewApps/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/data/app-tmp/
+    - cp ./target/*.war /reviewApps/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/data/app-tmp/ROOT.war
+    - cp ./${TOMCAT_CONFIG_DIR}/${TOMCAT_CONFIG_FILE}  /reviewApps/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/config/backend-config.properties
+    - adduser -D gitlab-runner
+    - chown gitlab-runner:gitlab-runner -R /reviewApps/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/data
+    - chmod g+w -R /reviewApps/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/data
+  cache:
+    paths:
+      - .m2/repository
+
+stop_review_app:
+  stage: reviewApps
+  tags:
+    - gitlab-apps.dev1-shell
+  variables:
+    SERVICE: app
+    GIT_STRATEGY: none
+  script:
+    - reviewapps stop
+  when: manual
+  environment:
+    name: reviewapps/${SERVICE}-${CI_COMMIT_REF_NAME}--${CI_PROJECT_NAME}
+    action: stop
+
+create_workPlace:
+  stage: befor_script
+  tags: 
+    - gitlab-apps.dev1-shell
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Start script to create review apps enviroment."
+    - reviewapps workPlace
+
+app_reviewapps:
+  stage: reviewApps
+  tags:
+    - gitlab-apps.dev1-shell
+  variables:
+    SERVICE: app
+    GIT_STRATEGY: none
+    UMASK: "0022"
+  environment:
+    name: reviewapps/${SERVICE}-${CI_COMMIT_REF_NAME}--${CI_PROJECT_NAME}
+    url: http://${GITLAB_TRAEFIK_FRONTEND}
+    on_stop: stop_review_app
+  script:
+    - reviewapps tomcat
+    
+start_elastic:
+  stage: elastic
+  tags:
+    - gitlab-apps.dev1-shell
+  variables:
+    SERVICE: elastic
+    GIT_STRATEGY: none
+  environment:
+    name: reviewapps/${SERVICE}-${CI_COMMIT_REF_NAME}--${CI_PROJECT_NAME}
+    url: http://kibana-${CI_COMMIT_REF_SLUG}--${CI_PROJECT_NAME}.${REVIEWAPPS_HOSTNAME}
+  script:
+    - reviewapps elastic
+
