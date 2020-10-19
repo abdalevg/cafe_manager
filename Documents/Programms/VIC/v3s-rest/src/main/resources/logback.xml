@@ -1,0 +1,63 @@
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!--  -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder name="enc" class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <param name="pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n" />
+            </layout>
+        </encoder>
+    </appender>
+
+    <!-- Conditional appender used when deployed as WAR archive -->
+    <if condition='isDefined("catalina.base")'>
+        <then>
+            <appender class="ch.qos.logback.core.FileAppender" name="FILE-CATALINA">
+                <file>${catalina.base}/logs/vvvs-rest.log</file>
+                <encoder>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </then>
+    </if>
+
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+
+        <!-- Conditional appender usage -->
+        <if condition='isDefined("catalina.base")'>
+            <then>
+                <appender-ref ref="FILE-CATALINA" />
+            </then>
+        </if>
+    </root>
+
+    <logger name="cz.cvut.vvvs" level="debug" />
+
+    <!--trace interceptor loguje servisy a DAO a jejich vstupni a vystupni hodnoty-->
+    <logger name="org.springframework.aop.interceptor.CustomizableTraceInterceptor" level="info" />
+
+    <!--SPRING-->
+    <logger name="org.springframework.core" level="info" />
+    <logger name="org.springframework.beans" level="info" />
+    <logger name="org.springframework.context" level="info" />
+    <logger name="org.springframework.web" level="info" />
+    <logger name="org.springframework.security" level="info" />
+    <logger name="org.springframework.security.ldap" level="info" />
+    <logger name="org.springframework.security.web.util.matcher" level="info" />
+
+    <!-- PERSISTENCE -->
+    <logger name="org.apache.ibatis" level="info" />
+    <logger name="org.mybatis" level="info" />
+    <logger name="org.mybatis.spring" level="info" />
+    <logger name="cz.cvut.vvvs.persistence" level="debug" />
+    <logger name="jdbc" level="off"/>
+    <logger name="jdbc.sqlonly" level="info"/>
+    <logger name="jdbc.audit" level="off"/>
+    <logger name="jdbc.resultset" level="off"/>
+
+    <!--UMYSLNE VYPNUTE-->
+    <logger name="com.ocpsoft.shade.org.apache.commons.digester" level="off" />
+    <logger name="cz.cvut.vvvs.services.domaincodes.DomainCodeServiceImpl" level="off" />
+
+</configuration>
